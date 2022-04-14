@@ -743,6 +743,8 @@ int mt7915_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 			  struct mt76_tx_info *tx_info)
 {
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)tx_info->skb->data;
+	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *)tx_info->skb->data;
+	__le16 fc = hdr->frame_control;
 	struct mt7915_dev *dev = container_of(mdev, struct mt7915_dev, mt76);
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx_info->skb);
 	struct ieee80211_key_conf *key = info->control.hw_key;
@@ -772,6 +774,10 @@ int mt7915_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 
 	t = (struct mt76_txwi_cache *)(txwi + mdev->drv->txwi_size);
 	t->skb = tx_info->skb;
+
+	if (ieee80211_is_action(fc) &&
+	    mgmt->u.action.category == 0xff)
+		return -1;
 
 	id = mt76_token_consume(mdev, &t);
 	if (id < 0)
