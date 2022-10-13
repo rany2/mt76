@@ -455,6 +455,7 @@ u32 mt7915_wed_init_buf(void *ptr, dma_addr_t phys, int token_id);
 
 int mt7915_register_device(struct mt7915_dev *dev);
 void mt7915_unregister_device(struct mt7915_dev *dev);
+void mt7915_eeprom_rebonding(struct mt7915_dev *dev);
 int mt7915_eeprom_init(struct mt7915_dev *dev);
 void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev,
 				struct mt7915_phy *phy);
@@ -511,7 +512,7 @@ int mt7915_mcu_set_fixed_rate_ctrl(struct mt7915_dev *dev,
 				   struct ieee80211_sta *sta,
 				   void *data, u32 field);
 int mt7915_mcu_set_eeprom(struct mt7915_dev *dev);
-int mt7915_mcu_get_eeprom(struct mt7915_dev *dev, u32 offset);
+int mt7915_mcu_get_eeprom(struct mt7915_dev *dev, u32 offset, u8 *read_buf);
 int mt7915_mcu_get_eeprom_free_block(struct mt7915_dev *dev, u8 *block_num);
 int mt7915_mcu_set_mac(struct mt7915_dev *dev, int band, bool enable,
 		       bool hdr_trans);

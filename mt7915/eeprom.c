@@ -126,7 +126,7 @@ static int mt7915_eeprom_load(struct mt7915_dev *dev)
 		/* read eeprom data from efuse */
 		block_num = DIV_ROUND_UP(eeprom_size, eeprom_blk_size);
 		for (i = 0; i < block_num; i++) {
-			ret = mt7915_mcu_get_eeprom(dev, i * eeprom_blk_size);
+			ret = mt7915_mcu_get_eeprom(dev, i * eeprom_blk_size, NULL);
 			if (ret < 0)
 				return ret;
 		}
@@ -231,6 +231,32 @@ void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev,
 	dev->chainshift = hweight8(dev->mphy.chainmask);
 }
 
+void mt7915_eeprom_rebonding(struct mt7915_dev *dev)
+{
+#define MT7976_ADIE_MASK			BIT(1)
+#define MT7986_ADIE1_EFFUSE_OFFSET		0x1000
+#define MT7986_ADIE1_MT7976C_OFFSET		0x270
+#define MT7986_ADIE1_E3_OFFSET			0x271
+	u32 adie_offset, offset, sku = mt7915_check_adie(dev, true);
+	u8 read_buf[MT7915_EEPROM_BLOCK_SIZE], *eeprom = dev->mt76.eeprom.data;
+
+
+	if (!(sku & MT7976_ADIE_MASK))
+		return;
+
+	adie_offset = (sku == MT7976_DUAL_ADIE) ? MT7986_ADIE1_EFFUSE_OFFSET : 0;
+
+	/* 7976 A-Die, To identify MT7976C */
+	offset = MT7986_ADIE1_MT7976C_OFFSET + adie_offset;
+	mt7915_mcu_get_eeprom(dev, offset, read_buf);
+	eeprom[MT7986_ADIE1_MT7976C_OFFSET] = read_buf[offset % MT7915_EEPROM_BLOCK_SIZE];
+
+	/* E3 re-binding */
+	offset = MT7986_ADIE1_E3_OFFSET + adie_offset;
+	mt7915_mcu_get_eeprom(dev, offset, read_buf);
+	eeprom[MT7986_ADIE1_E3_OFFSET] = read_buf[offset % MT7915_EEPROM_BLOCK_SIZE];
+}
+
 int mt7915_eeprom_init(struct mt7915_dev *dev)
 {
 	int ret;
@@ -245,6 +271,8 @@ int mt7915_eeprom_init(struct mt7915_dev *dev)
 		if (ret)
 			return ret;
 	}
+
+	mt7915_eeprom_rebonding(dev);
 
 	ret = mt7915_eeprom_load_precal(dev);
 	if (ret)
