@@ -289,7 +289,8 @@ s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
 	if (!mcs_rates)
 		mcs_rates = 10;
 
-	memset(dest, target_power, sizeof(*dest));
+	memset(dest, target_power, sizeof(*dest) - sizeof(dest->path));
+	memset(&dest->path, 0, sizeof(dest->path));
 
 	if (!IS_ENABLED(CONFIG_OF))
 		return target_power;
@@ -340,6 +341,28 @@ s8 mt76_get_rate_power_limits(struct mt76_phy *phy,
 	val = mt76_get_of_array(np, "rates-ru", &len, ru_rates + 1);
 	mt76_apply_multi_array_limit(dest->ru[0], ARRAY_SIZE(dest->ru[0]),
 				     ARRAY_SIZE(dest->ru), val, len,
+				     target_power, txs_delta, &max_power);
+
+	val = mt76_get_of_array(np, "paths-cck", &len, ARRAY_SIZE(dest->path.cck));
+	mt76_apply_array_limit(dest->path.cck, ARRAY_SIZE(dest->path.cck), val,
+			       target_power, txs_delta, &max_power);
+
+	val = mt76_get_of_array(np, "paths-ofdm", &len, ARRAY_SIZE(dest->path.ofdm));
+	mt76_apply_array_limit(dest->path.ofdm, ARRAY_SIZE(dest->path.ofdm), val,
+			       target_power, txs_delta, &max_power);
+
+	val = mt76_get_of_array(np, "paths-ofdm-bf", &len, ARRAY_SIZE(dest->path.ofdm_bf));
+	mt76_apply_array_limit(dest->path.ofdm_bf, ARRAY_SIZE(dest->path.ofdm_bf), val,
+			       target_power, txs_delta, &max_power);
+
+	val = mt76_get_of_array(np, "paths-ru", &len, ARRAY_SIZE(dest->path.ru[0]) + 1);
+	mt76_apply_multi_array_limit(dest->path.ru[0], ARRAY_SIZE(dest->path.ru[0]),
+				     ARRAY_SIZE(dest->path.ru), val, len,
+				     target_power, txs_delta, &max_power);
+
+	val = mt76_get_of_array(np, "paths-ru-bf", &len, ARRAY_SIZE(dest->path.ru_bf[0]) + 1);
+	mt76_apply_multi_array_limit(dest->path.ru_bf[0], ARRAY_SIZE(dest->path.ru_bf[0]),
+				     ARRAY_SIZE(dest->path.ru_bf), val, len,
 				     target_power, txs_delta, &max_power);
 
 	return max_power;

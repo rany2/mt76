@@ -863,6 +863,14 @@ struct mt76_power_limits {
 	s8 ofdm[8];
 	s8 mcs[4][10];
 	s8 ru[7][12];
+
+	struct {
+		s8 cck[4];
+		s8 ofdm[4];
+		s8 ofdm_bf[4];
+		s8 ru[7][10];
+		s8 ru_bf[7][10];
+	} path;
 };
 
 struct mt76_ethtool_worker_info {
