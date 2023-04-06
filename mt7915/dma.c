@@ -433,6 +433,26 @@ int mt7915_dma_init(struct mt7915_dev *dev, struct mt7915_phy *phy2)
 			if (is_mt7915(mdev))
 				mt76_rmw(dev, MT_WFDMA0_EXT0_CFG, MT_WFDMA0_EXT0_RXWB_KEEP,
 					 MT_WFDMA0_EXT0_RXWB_KEEP);
+			else {
+				if ((mt76_rr(dev, MT_CBTOP_RESV) & 0xff) == 2) {
+					mt76_set(dev, MT_WFDMA0_GLO_CFG, MT_WFDMA0_GLO_CFG_DUMMY_REG);
+					mt76_set(dev, MT_WFDMA0_CTXD_CFG, FIELD_PREP(MT_WFDMA0_CTXD_TIMEOUT, 0xa));
+				} else {
+					mt76_set(dev, MT_WFDMA0_CTXD_CFG, FIELD_PREP(MT_WFDMA0_CTXD_TIMEOUT, 0xff));
+
+					/*Delay tick set to 0xFFFF, which is about 3449us*/
+					mt76_wr(dev, MT_WFDMA_WED_DLY_INT_TICK, 0xffff);
+				}
+
+				mt76_clear(dev, MT_WFDMA0_CTXD_CFG, MT_WFDMA0_CTXD_CASCADE_NUM);
+
+				mt76_set(dev, MT_WFDMA0_CTXD_CFG,
+					FIELD_PREP(MT_WFDMA0_BAND0_CTXD_RING_IDX, 18) |
+					FIELD_PREP(MT_WFDMA0_BAND1_CTXD_RING_IDX, 19) |
+					MT_WFDMA0_BAND0_CTXD_EN | MT_WFDMA0_BAND1_CTXD_EN);
+
+				mt76_set(dev, MT_WFDMA0_CFG_EXT, MT_WFDMA0_EXT_TX_FCTRL_MODE);
+			}
 		}
 	} else {
 		mt76_clear(dev, MT_WFDMA_HOST_CONFIG, MT_WFDMA_HOST_CONFIG_WED);
