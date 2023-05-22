@@ -4,6 +4,7 @@
 #ifndef _COREDUMP_H_
 #define _COREDUMP_H_
 
+#include "../mt76_connac_mcu.h"
 #include "mt7915.h"
 
 struct trace {
@@ -15,6 +16,7 @@ struct mt7915_coredump {
 	char magic[16];
 
 	u32 len;
+	u32 hdr_len;
 
 	guid_t guid;
 
@@ -26,11 +28,27 @@ struct mt7915_coredump {
 	char kernel[64];
 	/* firmware version */
 	char fw_ver[ETHTOOL_FWVERS_LEN];
+	char fw_patch_date[MT76_BUILD_TIME_LEN];
+	char fw_ram_date[__MT76_RAM_TYPE_MAX][MT76_BUILD_TIME_LEN];
 
 	u32 device_id;
 
+	/* fw type */
+	char fw_type[8];
 	/* exception state */
 	char fw_state[12];
+
+	/* program counters */
+	u32 pc_dbg_ctrl;
+	u32 pc_cur_idx;
+	u32 pc_cur[10];
+	/* PC registers */
+	u32 pc_stack[32];
+
+	u32 lr_dbg_ctrl;
+	u32 lr_cur_idx;
+	/* LR registers */
+	u32 lr_stack[32];
 
 	u32 last_msg_id;
 	u32 eint_info_idx;
@@ -70,9 +88,6 @@ struct mt7915_coredump {
 		u32 handler;
 	} context;
 
-	/* link registers calltrace */
-	u32 call_stack[16];
-
 	/* memory content */
 	u8 data[];
 } __packed;
@@ -83,6 +98,7 @@ struct mt7915_coredump_mem {
 } __packed;
 
 struct mt7915_mem_hdr {
+	char name[64];
 	u32 start;
 	u32 len;
 	u8 data[];
@@ -98,26 +114,26 @@ struct mt7915_mem_region {
 #ifdef CONFIG_DEV_COREDUMP
 
 const struct mt7915_mem_region *
-mt7915_coredump_get_mem_layout(struct mt7915_dev *dev, u32 *num);
-struct mt7915_crash_data *mt7915_coredump_new(struct mt7915_dev *dev);
-int mt7915_coredump_submit(struct mt7915_dev *dev);
+mt7915_coredump_get_mem_layout(struct mt7915_dev *dev, u8 type, u32 *num);
+struct mt7915_crash_data *mt7915_coredump_new(struct mt7915_dev *dev, u8 type);
+int mt7915_coredump_submit(struct mt7915_dev *dev, u8 type);
 int mt7915_coredump_register(struct mt7915_dev *dev);
 void mt7915_coredump_unregister(struct mt7915_dev *dev);
 
 #else /* CONFIG_DEV_COREDUMP */
 
 static inline const struct mt7915_mem_region *
-mt7915_coredump_get_mem_layout(struct mt7915_dev *dev, u32 *num)
+mt7915_coredump_get_mem_layout(struct mt7915_dev *dev, u8 type, u32 *num)
 {
 	return NULL;
 }
 
-static inline int mt7915_coredump_submit(struct mt7915_dev *dev)
+static inline int mt7915_coredump_submit(struct mt7915_dev *dev, u8 type)
 {
 	return 0;
 }
 
-static inline struct mt7915_crash_data *mt7915_coredump_new(struct mt7915_dev *dev)
+static inline struct mt7915_crash_data *mt7915_coredump_new(struct mt7915_dev *dev, u8 type)
 {
 	return NULL;
 }

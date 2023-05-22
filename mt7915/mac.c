@@ -1663,28 +1663,31 @@ void mt7915_mac_reset_work(struct work_struct *work)
 }
 
 /* firmware coredump */
-void mt7915_mac_dump_work(struct work_struct *work)
+static void mt7915_mac_fw_coredump(struct mt7915_dev *dev, u8 type)
 {
 	const struct mt7915_mem_region *mem_region;
 	struct mt7915_crash_data *crash_data;
-	struct mt7915_dev *dev;
 	struct mt7915_mem_hdr *hdr;
 	size_t buf_len;
 	int i;
 	u32 num;
 	u8 *buf;
 
-	dev = container_of(work, struct mt7915_dev, dump_work);
+	if (type != MT76_RAM_TYPE_WM) {
+		dev_warn(dev->mt76.dev, "%s currently only supports WM coredump!\n",
+			 wiphy_name(dev->mt76.hw->wiphy));
+		return;
+	}
 
 	mutex_lock(&dev->dump_mutex);
 
-	crash_data = mt7915_coredump_new(dev);
+	crash_data = mt7915_coredump_new(dev, type);
 	if (!crash_data) {
 		mutex_unlock(&dev->dump_mutex);
-		goto skip_coredump;
+		return;
 	}
 
-	mem_region = mt7915_coredump_get_mem_layout(dev, &num);
+	mem_region = mt7915_coredump_get_mem_layout(dev, type, &num);
 	if (!mem_region || !crash_data->memdump_buf_len) {
 		mutex_unlock(&dev->dump_mutex);
 		goto skip_memdump;
@@ -1694,6 +1697,9 @@ void mt7915_mac_dump_work(struct work_struct *work)
 	buf_len = crash_data->memdump_buf_len;
 
 	/* dumping memory content... */
+	dev_info(dev->mt76.dev, "%s start coredump for %s\n",
+		 wiphy_name(dev->mt76.hw->wiphy),
+		 ((type == MT76_RAM_TYPE_WA) ? "WA" : "WM"));
 	memset(buf, 0, buf_len);
 	for (i = 0; i < num; i++) {
 		if (mem_region->len > buf_len) {
@@ -1711,6 +1717,7 @@ void mt7915_mac_dump_work(struct work_struct *work)
 		mt7915_memcpy_fromio(dev, buf, mem_region->start,
 				     mem_region->len);
 
+		strscpy(hdr->name, mem_region->name, sizeof(mem_region->name));
 		hdr->start = mem_region->start;
 		hdr->len = mem_region->len;
 
@@ -1727,8 +1734,18 @@ void mt7915_mac_dump_work(struct work_struct *work)
 	mutex_unlock(&dev->dump_mutex);
 
 skip_memdump:
-	mt7915_coredump_submit(dev);
-skip_coredump:
+	mt7915_coredump_submit(dev, type);
+}
+
+void mt7915_mac_dump_work(struct work_struct *work)
+{
+	struct mt7915_dev *dev;
+
+	dev = container_of(work, struct mt7915_dev, dump_work);
+
+	if (READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WM_WDT)
+		mt7915_mac_fw_coredump(dev, MT76_RAM_TYPE_WM);
+
 	queue_work(dev->mt76.wq, &dev->reset_work);
 }
 

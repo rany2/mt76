@@ -27,6 +27,8 @@
 
 #define MT76_TOKEN_FREE_THR	64
 
+#define MT76_BUILD_TIME_LEN	24
+
 #define MT_QFLAG_WED_RING	GENMASK(1, 0)
 #define MT_QFLAG_WED_TYPE	GENMASK(3, 2)
 #define MT_QFLAG_WED		BIT(4)
@@ -52,6 +54,12 @@ enum mt76_bus_type {
 	MT76_BUS_MMIO,
 	MT76_BUS_USB,
 	MT76_BUS_SDIO,
+};
+
+enum mt76_ram_type {
+	MT76_RAM_TYPE_WM,
+	MT76_RAM_TYPE_WA,
+	__MT76_RAM_TYPE_MAX,
 };
 
 enum mt76_wed_type {
@@ -772,6 +780,9 @@ struct mt76_dev {
 	struct device *dma_dev;
 
 	struct mt76_mcu mcu;
+	struct mt76_connac2_patch_hdr *patch_hdr;
+	struct mt76_connac2_fw_trailer *wm_hdr;
+	struct mt76_connac2_fw_trailer *wa_hdr;
 
 	struct net_device napi_dev;
 	struct net_device tx_napi_dev;

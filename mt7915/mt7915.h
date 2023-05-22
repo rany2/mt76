@@ -323,7 +323,7 @@ struct mt7915_dev {
 	struct mutex dump_mutex;
 #ifdef CONFIG_DEV_COREDUMP
 	struct {
-		struct mt7915_crash_data *crash_data;
+		struct mt7915_crash_data *crash_data[__MT76_RAM_TYPE_MAX];
 	} coredump;
 #endif
 
