@@ -79,8 +79,10 @@ mt7915_sys_recovery_set(struct file *file, const char __user *user_buf,
 	 * 4: trigger & enable system error L3 tx abort
 	 * 5: trigger & enable system error L3 tx disable.
 	 * 6: trigger & enable system error L3 bf recovery.
-	 * 7: trigger & enable system error full recovery.
-	 * 8: trigger firmware crash.
+	 * 8: trigger & enable system error full recovery.
+	 * 9: trigger firmware crash.
+	 * 10: trigger grab wa firmware coredump.
+	 * 11: trigger grab wm firmware coredump.
 	 */
 	case SER_QUERY:
 		ret = mt7915_mcu_set_ser(dev, 0, 0, band);
@@ -105,7 +107,7 @@ mt7915_sys_recovery_set(struct file *file, const char __user *user_buf,
 		if (ret)
 			return ret;
 
-		dev->recovery.state |= MT_MCU_CMD_WDT_MASK;
+		dev->recovery.state |= MT_MCU_CMD_WM_WDT;
 		mt7915_reset(dev);
 		break;
 
@@ -114,6 +116,12 @@ mt7915_sys_recovery_set(struct file *file, const char __user *user_buf,
 		mt76_wr(dev, MT_MCU_WM_CIRQ_EINT_MASK_CLR_ADDR, BIT(18));
 		mt76_wr(dev, MT_MCU_WM_CIRQ_EINT_SOFT_ADDR, BIT(18));
 		break;
+
+	case SER_SET_FW_COREDUMP_WA:
+		mt7915_coredump(dev, MT7915_COREDUMP_MANUAL_WA);
+		break;
+	case SER_SET_FW_COREDUMP_WM:
+		mt7915_coredump(dev, MT7915_COREDUMP_MANUAL_WM);
 	default:
 		break;
 	}
@@ -154,9 +162,13 @@ mt7915_sys_recovery_get(struct file *file, char __user *user_buf,
 	desc += scnprintf(buff + desc, bufsz - desc,
 			  "6: trigger system error L3 bf recovery\n");
 	desc += scnprintf(buff + desc, bufsz - desc,
-			  "7: trigger system error full recovery\n");
+			  "8: trigger system error full recovery\n");
 	desc += scnprintf(buff + desc, bufsz - desc,
-			  "8: trigger firmware crash\n");
+			  "9: trigger firmware crash\n");
+	desc += scnprintf(buff + desc, bufsz - desc,
+			  "10: trigger grab wa firmware coredump\n");
+	desc += scnprintf(buff + desc, bufsz - desc,
+			  "11: trigger grab wm firmware coredump\n");
 
 	/* SER statistics */
 	desc += scnprintf(buff + desc, bufsz - desc,

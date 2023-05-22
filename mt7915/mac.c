@@ -1749,10 +1749,34 @@ void mt7915_mac_dump_work(struct work_struct *work)
 
 	dev = container_of(work, struct mt7915_dev, dump_work);
 
-	if (READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WM_WDT)
+	if (dev->dump_state == MT7915_COREDUMP_MANUAL_WA ||
+	    READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WA_WDT)
+		mt7915_mac_fw_coredump(dev, MT76_RAM_TYPE_WA);
+
+	if (dev->dump_state == MT7915_COREDUMP_MANUAL_WM ||
+	    READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WM_WDT)
 		mt7915_mac_fw_coredump(dev, MT76_RAM_TYPE_WM);
 
-	queue_work(dev->mt76.wq, &dev->reset_work);
+	if (READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WDT_MASK)
+		queue_work(dev->mt76.wq, &dev->reset_work);
+
+	dev->dump_state = MT7915_COREDUMP_IDLE;
+}
+
+void mt7915_coredump(struct mt7915_dev *dev, u8 state)
+{
+	if (state == MT7915_COREDUMP_IDLE ||
+	    state > MT7915_COREDUMP_AUTO)
+		return;
+
+	if (dev->dump_state != MT7915_COREDUMP_IDLE)
+		return;
+
+	dev->dump_state = state;
+	dev_info(dev->mt76.dev, "%s attempting grab coredump\n",
+		 wiphy_name(dev->mt76.hw->wiphy));
+
+	queue_work(dev->mt76.wq, &dev->dump_work);
 }
 
 void mt7915_reset(struct mt7915_dev *dev)
@@ -1771,7 +1795,7 @@ void mt7915_reset(struct mt7915_dev *dev)
 			 wiphy_name(dev->mt76.hw->wiphy));
 
 		mt7915_irq_disable(dev, MT_INT_MCU_CMD);
-		queue_work(dev->mt76.wq, &dev->dump_work);
+		mt7915_coredump(dev, MT7915_COREDUMP_AUTO);
 		return;
 	}
 
