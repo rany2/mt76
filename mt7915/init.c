@@ -507,6 +507,7 @@ mt7915_mac_init_band(struct mt7915_dev *dev, u8 band)
 	mask = MT_WF_RMAC_MIB_OBSS_BACKOFF | MT_WF_RMAC_MIB_ED_OFFSET;
 	set = FIELD_PREP(MT_WF_RMAC_MIB_OBSS_BACKOFF, 0) |
 	      FIELD_PREP(MT_WF_RMAC_MIB_ED_OFFSET, 4);
+	mt76_rmw(dev, MT_WF_RMAC_MIB_TIME0(band), mask, set);
 	mt76_rmw(dev, MT_WF_RMAC_MIB_AIRTIME0(band), mask, set);
 
 	/* filter out non-resp frames and get instanstaeous signal reporting */

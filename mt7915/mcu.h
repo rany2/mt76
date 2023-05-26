@@ -163,27 +163,6 @@ struct mt7915_mcu_phy_rx_info {
 	u8 bw;
 };
 
-struct mt7915_mcu_mib {
-	__le32 band;
-	__le32 offs;
-	__le64 data;
-} __packed;
-
-enum mt7915_chan_mib_offs {
-	/* mt7915 */
-	MIB_TX_TIME = 81,
-	MIB_RX_TIME,
-	MIB_OBSS_AIRTIME = 86,
-	MIB_NON_WIFI_TIME,
-	MIB_TXOP_INIT_COUNT,
-
-	/* mt7916 */
-	MIB_TX_TIME_V2 = 6,
-	MIB_RX_TIME_V2 = 8,
-	MIB_OBSS_AIRTIME_V2 = 490,
-	MIB_NON_WIFI_TIME_V2
-};
-
 struct mt7915_mcu_txpower_sku {
 	u8 format_id;
 	u8 limit_type;
