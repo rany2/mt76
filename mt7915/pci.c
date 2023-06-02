@@ -103,6 +103,7 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 			    const struct pci_device_id *id)
 {
 	struct mt7915_hif *hif2 = NULL;
+	struct pci_dev *hif2_dev;
 	struct mt7915_dev *dev;
 	struct mt76_dev *mdev;
 	int irq;
@@ -157,7 +158,19 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 	mt76_wr(dev, MT_PCIE_MAC_INT_ENABLE, 0xff);
 
 	if (hif2) {
+		hif2_dev = container_of(hif2->dev, struct pci_dev, dev);
 		dev->hif2 = hif2;
+
+		ret = pci_alloc_irq_vectors(hif2_dev, 1, 1, PCI_IRQ_ALL_TYPES);
+		if (ret < 0)
+			goto free_hif2;
+
+		dev->hif2->irq = hif2_dev->irq;
+		ret = devm_request_irq(mdev->dev, dev->hif2->irq,
+				       mt7915_irq_handler, IRQF_SHARED,
+				       KBUILD_MODNAME "-hif", dev);
+		if (ret)
+			goto free_hif2_irq_vector;
 
 		mt76_wr(dev, MT_INT1_SOURCE_CSR, ~0);
 		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
@@ -167,11 +180,6 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 		else
 			mt76_wr(dev, MT_PCIE1_MAC_INT_ENABLE_MT7916, 0xff);
 
-		ret = devm_request_irq(mdev->dev, dev->hif2->irq,
-				       mt7915_irq_handler, IRQF_SHARED,
-				       KBUILD_MODNAME "-hif", dev);
-		if (ret)
-			goto free_hif2;
 	}
 
 	ret = mt7915_register_device(dev);
@@ -183,6 +191,9 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 free_hif2_irq:
 	if (dev->hif2)
 		devm_free_irq(mdev->dev, dev->hif2->irq, dev);
+free_hif2_irq_vector:
+	if (dev->hif2)
+		pci_free_irq_vectors(hif2_dev);
 free_hif2:
 	if (dev->hif2)
 		put_device(dev->hif2->dev);
