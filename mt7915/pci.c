@@ -161,6 +161,7 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 	if (hif2) {
 		dev->hif2 = hif2;
 
+		mt76_wr(dev, MT_INT1_SOURCE_CSR, ~0);
 		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
 		/* master switch of PCIe tnterrupt enable */
 		if (is_mt7915(mdev))
