@@ -13,10 +13,37 @@
 #include <linux/leds.h>
 #include <linux/usb.h>
 #include <linux/average.h>
-#include <linux/soc/mediatek/mtk_wed.h>
 #include <net/mac80211.h>
 #include "util.h"
 #include "testmode.h"
+
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+#include <linux/soc/mediatek/mtk_wed.h>
+#else
+struct mtk_wed_device { int:0; };
+static inline bool mtk_wed_device_active(struct mtk_wed_device *dev)
+{
+	return false;
+}
+static inline bool mtk_wed_get_rx_capa(struct mtk_wed_device *dev)
+{
+	return false;
+}
+#define mtk_wed_device_detach(_dev) do {} while (0)
+#define mtk_wed_device_start(_dev, _mask) do {} while (0)
+#define mtk_wed_device_tx_ring_setup(_dev, _ring, _regs, _reset) -ENODEV
+#define mtk_wed_device_txfree_ring_setup(_dev, _ring, _regs) -ENODEV
+#define mtk_wed_device_reg_read(_dev, _reg) 0
+#define mtk_wed_device_reg_write(_dev, _reg, _val) do {} while (0)
+#define mtk_wed_device_irq_get(_dev, _mask) 0
+#define mtk_wed_device_irq_set_mask(_dev, _mask) do {} while (0)
+#define mtk_wed_device_rx_ring_setup(_dev, _ring, _regs, _reset) -ENODEV
+#define mtk_wed_device_ppe_check(_dev, _skb, _reason, _hash)  do {} while (0)
+#define mtk_wed_device_update_msg(_dev, _id, _msg, _len) -ENODEV
+#define mtk_wed_device_stop(_dev) do {} while (0)
+#define mtk_wed_device_dma_reset(_dev) do {} while (0)
+#define mtk_wed_device_setup_tc(_dev, _netdev, _type, _type_data) -EOPNOTSUPP
+#endif
 
 #define MT_MCU_RING_SIZE	32
 #define MT_RX_BUF_SIZE		2048
