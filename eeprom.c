@@ -107,8 +107,16 @@ mt76_eeprom_override(struct mt76_phy *phy)
 {
 	struct mt76_dev *dev = phy->dev;
 	struct device_node *np = dev->dev->of_node;
+	const u8 __maybe_unused *mac = NULL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,13,0)
 	of_get_mac_address(np, phy->macaddr);
+#elif defined(CONFIG_OF)
+	if (np)
+		mac = of_get_mac_address(np);
+	if (!IS_ERR_OR_NULL(mac))
+		ether_addr_copy(phy->macaddr, mac);
+#endif
 
 	if (!is_valid_ether_addr(phy->macaddr)) {
 		eth_random_addr(phy->macaddr);
