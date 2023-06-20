@@ -3,6 +3,8 @@
 
 #include <linux/fs.h>
 #include <linux/firmware.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
 #include "mt7921.h"
 #include "mt7921_trace.h"
 #include "mcu.h"

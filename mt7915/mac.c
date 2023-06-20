@@ -3,6 +3,7 @@
 
 #include <linux/etherdevice.h>
 #include <linux/timekeeping.h>
+#include <linux/pci.h>
 #include "coredump.h"
 #include "mt7915.h"
 #include "../dma.h"

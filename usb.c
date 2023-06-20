@@ -4,6 +4,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include "mt76.h"
 #include "usb_trace.h"
 #include "dma.h"
