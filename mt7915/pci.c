@@ -141,8 +141,6 @@ static int mt7915_pci_probe(struct pci_dev *pdev,
 		goto free_wed_or_irq_vector;
 
 	if (!ret) {
-		hif2 = mt7915_pci_init_hif2(pdev);
-
 		ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_ALL_TYPES);
 		if (ret < 0)
 			goto free_device;
